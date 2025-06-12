@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  }
+  
+  body {
+    @apply bg-neutral-50 text-neutral-900;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-800 hover:bg-primary-900 text-white font-medium px-6 py-3 rounded-lg transition-all duration-200 hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .btn-secondary {
+    @apply bg-neutral-100 hover:bg-neutral-200 text-neutral-900 font-medium px-6 py-3 rounded-lg transition-all duration-200 hover:shadow-md active:scale-95 border border-neutral-300;
+  }
+  
+  .btn-ghost {
+    @apply text-primary-800 hover:bg-primary-50 font-medium px-4 py-2 rounded-md transition-all duration-200;
+  }
+  
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-neutral-200 hover:shadow-md transition-shadow duration-200;
+  }
+  
+  .input-field {
+    @apply w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white;
+  }
+  
+  .data-table {
+    @apply w-full border-collapse bg-white rounded-lg overflow-hidden shadow-sm;
+  }
+  
+  .data-table th {
+    @apply bg-primary-800 text-white px-4 py-3 text-left font-medium text-sm;
+  }
+  
+  .data-table td {
+    @apply px-4 py-3 border-b border-neutral-200 text-sm;
+  }
+  
+  .data-table tr:hover {
+    @apply bg-neutral-50;
+  }
+  
+  .status-badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .status-active {
+    @apply bg-success-50 text-success-600;
+  }
+  
+  .status-inactive {
+    @apply bg-error-50 text-error-600;
+  }
+  
+  .status-pending {
+    @apply bg-warning-50 text-warning-600;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .animate-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  .slide-in {
+    animation: slideUp 0.3s ease-out;
+  }
+}
