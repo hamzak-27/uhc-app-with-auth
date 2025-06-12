@@ -1,4 +1,5 @@
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || (import.meta.env.DEV ? "http://localhost:3001" : "http://localhost:3001");
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 
+  (import.meta.env.DEV ? "http://localhost:3001" : "");
 const API_ENDPOINTS = {
   token: `${BACKEND_URL}/api/uhc/token`,
   eligibility: `${BACKEND_URL}/api/uhc/eligibility`,
