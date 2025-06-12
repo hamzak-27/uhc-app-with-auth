@@ -1,11 +1,20 @@
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 
   (import.meta.env.DEV ? "http://localhost:3001" : "");
+  
+console.log('🔧 Backend URL Configuration:', {
+  isDev: import.meta.env.DEV,
+  viteBackendUrl: import.meta.env.VITE_BACKEND_URL,
+  calculatedBackendUrl: BACKEND_URL
+});
+
 const API_ENDPOINTS = {
   token: `${BACKEND_URL}/api/uhc/token`,
   eligibility: `${BACKEND_URL}/api/uhc/eligibility`,
   coverage: `${BACKEND_URL}/api/uhc/coverage`,
   memberCard: `${BACKEND_URL}/api/uhc/member-card`
 };
+
+console.log('🎯 API Endpoints:', API_ENDPOINTS);
 
 // API Types
 export interface TokenResponse {
@@ -99,10 +108,16 @@ class UHCApiClient {
       }
     } catch (error) {
       console.error('❌ Network error during token generation:', error);
+      console.error('📍 Backend URL being used:', API_ENDPOINTS.token);
+      console.error('🔧 Environment check:', {
+        isDev: import.meta.env.DEV,
+        backendUrl: import.meta.env.VITE_BACKEND_URL,
+        calculatedBackendUrl: BACKEND_URL
+      });
       
       let errorMessage = 'Unknown error';
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        errorMessage = 'Failed to connect to backend server. Make sure the backend server is running on port 3001.';
+        errorMessage = `Failed to connect to backend server at ${API_ENDPOINTS.token}`;
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
