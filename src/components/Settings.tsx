@@ -1,7 +1,11 @@
 import React from 'react';
-import { Settings as SettingsIcon, Key, Shield, Info } from 'lucide-react';
+import { Settings as SettingsIcon, Key, Shield, Info, Users } from 'lucide-react';
+import { auth } from '../lib/auth';
 
 export const Settings: React.FC = () => {
+  const currentUser = auth.getCurrentUser();
+  const microsoftAccount = auth.getMicrosoftAccount();
+
   return (
     <div className="space-y-6 animate-in">
       {/* Header */}
@@ -11,6 +15,80 @@ export const Settings: React.FC = () => {
           <span>Settings</span>
         </h1>
         <p className="text-neutral-600 mt-2">Application configuration and information</p>
+      </div>
+
+      {/* User Account Information */}
+      <div className="card p-8">
+        <h2 className="text-xl font-semibold font-grotesk mb-6 flex items-center space-x-2">
+          <Users className="w-5 h-5 text-primary-800" />
+          <span>Account Information</span>
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              Email Address
+            </label>
+            <input
+              type="text"
+              value={currentUser?.email || 'Not signed in'}
+              className="input-field bg-neutral-50"
+              disabled
+              readOnly
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              Full Name
+            </label>
+            <input
+              type="text"
+              value={currentUser?.user_metadata?.full_name || 'Not provided'}
+              className="input-field bg-neutral-50"
+              disabled
+              readOnly
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              Authentication Provider
+            </label>
+            <input
+              type="text"
+              value={currentUser?.user_metadata?.provider === 'microsoft' ? 'Microsoft Authenticator' : 'Email/Password'}
+              className="input-field bg-neutral-50"
+              disabled
+              readOnly
+            />
+          </div>
+
+          {microsoftAccount && (
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Microsoft Account
+              </label>
+              <input
+                type="text"
+                value={microsoftAccount.name || microsoftAccount.username}
+                className="input-field bg-neutral-50"
+                disabled
+                readOnly
+              />
+            </div>
+          )}
+        </div>
+
+        {currentUser?.user_metadata?.provider === 'microsoft' && (
+          <div className="mt-6 p-4 bg-primary-50 border border-primary-200 rounded-lg">
+            <h3 className="font-medium text-primary-800 mb-2">Microsoft Authentication</h3>
+            <p className="text-primary-700 text-sm">
+              Your account is authenticated through Microsoft Authenticator. This provides enhanced security 
+              and seamless integration with your organization's identity management system.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* UHC API Configuration */}
@@ -73,6 +151,8 @@ export const Settings: React.FC = () => {
             <li>• <code className="bg-white px-1 rounded">UHC_CLIENT_ID</code> - Your UHC API client identifier</li>
             <li>• <code className="bg-white px-1 rounded">UHC_CLIENT_SECRET</code> - Your UHC API client secret</li>
             <li>• <code className="bg-white px-1 rounded">VITE_BACKEND_URL</code> - Backend server URL (optional)</li>
+            <li>• <code className="bg-white px-1 rounded">VITE_AZURE_CLIENT_ID</code> - Microsoft Azure client ID</li>
+            <li>• <code className="bg-white px-1 rounded">VITE_AZURE_TENANT_ID</code> - Microsoft Azure tenant ID</li>
             <li>• Create a <code className="bg-white px-1 rounded">.env</code> file in the project root for local development</li>
           </ul>
         </div>
@@ -131,7 +211,8 @@ export const Settings: React.FC = () => {
               Patient Search<br />
               History Tracking<br />
               PDF Export<br />
-              Member Card Retrieval
+              Member Card Retrieval<br />
+              Microsoft Authentication
             </p>
           </div>
         </div>
@@ -159,6 +240,17 @@ export const Settings: React.FC = () => {
               <p className="text-neutral-600 text-sm">
                 OAuth tokens are automatically managed and refreshed. All API communications use HTTPS.
                 Credentials are stored as environment variables, never in source code.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-3">
+            <Users className="w-5 h-5 text-primary-600 mt-0.5" />
+            <div>
+              <h3 className="font-medium text-neutral-900">Microsoft Authentication</h3>
+              <p className="text-neutral-600 text-sm">
+                Secure authentication through Microsoft Authenticator provides enterprise-grade security
+                with multi-factor authentication and conditional access policies.
               </p>
             </div>
           </div>

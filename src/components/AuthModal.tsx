@@ -119,15 +119,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMo
     setIsLoading(true);
 
     try {
+      console.log('🔄 Microsoft sign in button clicked');
       const result = await auth.signInWithMicrosoft();
       
-      if (!result.success) {
+      if (result.success) {
+        console.log('✅ Microsoft sign in successful');
+        handleClose();
+      } else {
+        console.error('❌ Microsoft sign in failed:', result.error);
         setError(result.error || 'Microsoft sign in failed');
-        setIsLoading(false);
       }
-      // If successful, the redirect will handle the rest
     } catch (error) {
-      setError('An unexpected error occurred');
+      console.error('❌ Microsoft sign in exception:', error);
+      setError('An unexpected error occurred during Microsoft authentication');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -171,6 +176,43 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMo
               <div>
                 <p className="text-success-700 font-medium">Success</p>
                 <p className="text-success-600 text-sm mt-1">{success}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Microsoft Sign In - Show at top for all modes except forgot password */}
+          {mode !== 'forgot-password' && (
+            <div className="mb-6">
+              <button
+                type="button"
+                onClick={handleMicrosoftSignIn}
+                disabled={isLoading}
+                className="w-full flex items-center justify-center space-x-3 px-4 py-3 border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <svg className="w-5 h-5" viewBox="0 0 23 23">
+                    <path fill="#f3f3f3" d="M0 0h23v23H0z"/>
+                    <path fill="#f35325" d="M1 1h10v10H1z"/>
+                    <path fill="#81bc06" d="M12 1h10v10H12z"/>
+                    <path fill="#05a6f0" d="M1 12h10v10H1z"/>
+                    <path fill="#ffba08" d="M12 12h10v10H12z"/>
+                  </svg>
+                )}
+                <span className="font-medium">
+                  {isLoading ? 'Authenticating...' : 'Continue with Microsoft Authenticator'}
+                </span>
+              </button>
+
+              {/* Divider */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-neutral-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-neutral-500">Or continue with email</span>
+                </div>
               </div>
             </div>
           )}
@@ -244,32 +286,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMo
                 ) : (
                   <span>Sign In</span>
                 )}
-              </button>
-
-              {/* Microsoft Sign In */}
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-neutral-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-neutral-500">Or continue with</span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleMicrosoftSignIn}
-                disabled={isLoading}
-                className="w-full flex items-center justify-center space-x-2 px-4 py-3 border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 23 23">
-                  <path fill="#f3f3f3" d="M0 0h23v23H0z"/>
-                  <path fill="#f35325" d="M1 1h10v10H1z"/>
-                  <path fill="#81bc06" d="M12 1h10v10H12z"/>
-                  <path fill="#05a6f0" d="M1 12h10v10H1z"/>
-                  <path fill="#ffba08" d="M12 12h10v10H12z"/>
-                </svg>
-                <span>Microsoft Authenticator</span>
               </button>
 
               <div className="text-center">

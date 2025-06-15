@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { MsalProvider } from '@azure/msal-react';
+import { msalInstance } from './lib/msal-config';
 import { AuthGuard } from './components/AuthGuard';
 import { Layout } from './components/Layout';
 import { PatientSearch } from './pages/PatientSearch';
@@ -32,27 +34,29 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/auth/reset-password" element={<ResetPassword />} />
-        
-        {/* Protected routes */}
-        <Route path="/*" element={
-          <AuthGuard>
-            <Layout user={user}>
-              <Routes>
-                <Route path="/" element={<PatientSearch />} />
-                <Route path="/history" element={<PatientHistory />} />
-                <Route path="/patient/:id" element={<PatientDetail />} />
-                <Route path="/settings" element={<Settings />} />
-              </Routes>
-            </Layout>
-          </AuthGuard>
-        } />
-      </Routes>
-    </Router>
+    <MsalProvider instance={msalInstance}>
+      <Router>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
+          
+          {/* Protected routes */}
+          <Route path="/*" element={
+            <AuthGuard>
+              <Layout user={user}>
+                <Routes>
+                  <Route path="/" element={<PatientSearch />} />
+                  <Route path="/history" element={<PatientHistory />} />
+                  <Route path="/patient/:id" element={<PatientDetail />} />
+                  <Route path="/settings" element={<Settings />} />
+                </Routes>
+              </Layout>
+            </AuthGuard>
+          } />
+        </Routes>
+      </Router>
+    </MsalProvider>
   );
 }
 

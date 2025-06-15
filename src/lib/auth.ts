@@ -1,4 +1,6 @@
 import { supabase } from './supabase';
+import { msalInstance, loginRequest } from './msal-config';
+import { AccountInfo, AuthenticationResult } from '@azure/msal-browser';
 import type { User, Session, AuthError } from '@supabase/supabase-js';
 
 export interface AuthUser {
@@ -7,6 +9,7 @@ export interface AuthUser {
   user_metadata?: {
     full_name?: string;
     avatar_url?: string;
+    provider?: string;
   };
 }
 
@@ -166,36 +169,131 @@ class AuthService {
 
   async signInWithMicrosoft(): Promise<AuthResponse> {
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'azure',
-        options: {
-          scopes: 'email profile',
-          redirectTo: `${window.location.origin}/auth/callback`
+      console.log('🔄 Starting Microsoft authentication...');
+      
+      // Check if MSAL is configured
+      if (!import.meta.env.VITE_AZURE_CLIENT_ID || !import.meta.env.VITE_AZURE_TENANT_ID) {
+        return {
+          success: false,
+          error: 'Microsoft authentication is not configured. Please check your environment variables.'
+        };
+      }
+
+      // Handle any existing accounts
+      const accounts = msalInstance.getAllAccounts();
+      if (accounts.length > 0) {
+        msalInstance.setActiveAccount(accounts[0]);
+      }
+
+      // Attempt silent login first
+      let result: AuthenticationResult;
+      try {
+        result = await msalInstance.acquireTokenSilent({
+          ...loginRequest,
+          account: accounts[0] || undefined,
+        });
+        console.log('✅ Silent authentication successful');
+      } catch (silentError) {
+        console.log('🔄 Silent authentication failed, using interactive login');
+        
+        // If silent login fails, use interactive login
+        try {
+          result = await msalInstance.acquireTokenPopup(loginRequest);
+          console.log('✅ Interactive authentication successful');
+        } catch (interactiveError) {
+          console.error('❌ Interactive authentication failed:', interactiveError);
+          return {
+            success: false,
+            error: 'Microsoft authentication was cancelled or failed'
+          };
         }
+      }
+
+      // Extract user information from Microsoft
+      const account = result.account;
+      if (!account) {
+        return {
+          success: false,
+          error: 'Failed to get account information from Microsoft'
+        };
+      }
+
+      console.log('📋 Microsoft account info:', {
+        username: account.username,
+        name: account.name,
+        localAccountId: account.localAccountId
       });
 
-      if (error) {
+      // Create or sign in user with Supabase using Microsoft account info
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
+        email: account.username,
+        password: account.localAccountId // Use account ID as password for Microsoft users
+      });
+
+      if (error && error.message.includes('Invalid login credentials')) {
+        // User doesn't exist, create them
+        console.log('🔄 Creating new user for Microsoft account');
+        
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: account.username,
+          password: account.localAccountId,
+          options: {
+            data: {
+              full_name: account.name || account.username,
+              provider: 'microsoft',
+              microsoft_account_id: account.localAccountId
+            }
+          }
+        });
+
+        if (signUpError) {
+          console.error('❌ Failed to create Microsoft user:', signUpError);
+          return {
+            success: false,
+            error: this.getErrorMessage(signUpError)
+          };
+        }
+
+        if (signUpData.user) {
+          console.log('✅ Microsoft user created successfully');
+          return {
+            success: true,
+            user: this.transformUser(signUpData.user)
+          };
+        }
+      } else if (error) {
+        console.error('❌ Microsoft sign in error:', error);
         return {
           success: false,
           error: this.getErrorMessage(error)
         };
       }
 
-      // OAuth redirect will handle the rest
-      return {
-        success: true
-      };
-    } catch (error) {
-      console.error('Microsoft sign in error:', error);
+      if (authData?.user) {
+        console.log('✅ Microsoft user signed in successfully');
+        return {
+          success: true,
+          user: this.transformUser(authData.user)
+        };
+      }
+
       return {
         success: false,
-        error: 'An unexpected error occurred during Microsoft sign in'
+        error: 'Failed to authenticate with Microsoft'
+      };
+
+    } catch (error) {
+      console.error('❌ Microsoft authentication error:', error);
+      return {
+        success: false,
+        error: `Microsoft authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       };
     }
   }
 
   async signOut(): Promise<{ success: boolean; error?: string }> {
     try {
+      // Sign out from Supabase
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -203,6 +301,20 @@ class AuthService {
           success: false,
           error: this.getErrorMessage(error)
         };
+      }
+
+      // Sign out from Microsoft if user was authenticated via Microsoft
+      try {
+        const accounts = msalInstance.getAllAccounts();
+        if (accounts.length > 0) {
+          await msalInstance.logoutPopup({
+            account: accounts[0],
+            mainWindowRedirectUri: window.location.origin
+          });
+        }
+      } catch (msalError) {
+        console.warn('Microsoft logout failed:', msalError);
+        // Don't fail the entire logout if Microsoft logout fails
       }
 
       this.currentUser = null;
@@ -274,6 +386,17 @@ class AuthService {
 
   isAuthenticated(): boolean {
     return !!this.currentUser && !!this.currentSession;
+  }
+
+  // Get Microsoft account info if available
+  getMicrosoftAccount(): AccountInfo | null {
+    try {
+      const accounts = msalInstance.getAllAccounts();
+      return accounts.length > 0 ? accounts[0] : null;
+    } catch (error) {
+      console.error('Error getting Microsoft account:', error);
+      return null;
+    }
   }
 
   private getErrorMessage(error: AuthError): string {
